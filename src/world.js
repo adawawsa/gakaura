@@ -58,13 +58,13 @@ export function createWorld(scene, mats) {
     }
     /* flat girder seams on the underside */
     for (const x of [-8, -3, 3, 8]) {
-      const s = new THREE.Mesh(seamGeo, mats.girder);
+      const s = new THREE.Mesh(seamGeo, mats.girderPlain);
       s.position.set(x, DECK_Y - 0.05, 0);
       seg.add(s);
     }
 
     /* pillar: shaft rises from the street, hammerhead cap meets the deck */
-    const cap = new THREE.Mesh(capGeo, mats.concrete);
+    const cap = new THREE.Mesh(capGeo, mats.capConcrete);
     cap.position.set(0, DECK_Y - 0.55, PILLAR_Z);
     seg.add(cap);
     const shaft = new THREE.Mesh(shaftGeo, mats.concrete);
