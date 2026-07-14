@@ -6,11 +6,12 @@ import {
   createWorld,
   randomizeSegment,
   disableRidge,
-  resetOverheadCar,
+  resetStreetCar,
   collide,
   collectOrbs,
   SEG_LEN,
   TOTAL,
+  DECK_Y,
   PILLAR_Z,
   X_CLAMP,
 } from './world.js';
@@ -31,12 +32,22 @@ const input = createInput(() => {
   if (state !== 'run') start();
 });
 
-/* player */
-const player = makeCar(mats, 0x333846);
+/* player — an inverted car clinging to the deck underside overhead */
+const player = new THREE.Group();
+const playerCar = makeCar(mats, 0x333846);
+playerCar.rotation.z = Math.PI;
+player.add(playerCar);
 scene.add(player);
+/* its headlights wash the deck surface ahead */
 const headLight = new THREE.PointLight(0xfff2d0, 25, 26, 2);
-headLight.position.set(0, 1.4, -7);
+headLight.position.set(0, -1.4, -7);
 player.add(headLight);
+/* contact shadow on the deck, so the car reads as attached */
+const contactShadow = new THREE.Sprite(
+  new THREE.SpriteMaterial({ map: mats.glow.map, color: 0x000000, depthWrite: false, opacity: 0.5 })
+);
+contactShadow.scale.set(4.2, 2.0, 1);
+scene.add(contactShadow);
 
 /* ---------- state ---------- */
 let state = 'title';
@@ -80,7 +91,7 @@ function start() {
   for (const s of segments) {
     if (s.position.z + PILLAR_Z > -45) disableRidge(s);
   }
-  traffic.forEach((t, i) => resetOverheadCar(t, -20 - i * 40));
+  traffic.forEach((t, i) => resetStreetCar(t, -20 - i * 40));
   pools.forEach((p, i) => {
     p.position.z = -i * 50 - 15;
   });
@@ -161,7 +172,7 @@ function step() {
     }
     for (const tr of traffic) {
       tr.mesh.position.z += (speed - tr.dir * tr.speed) * dt;
-      if (tr.mesh.position.z > 20) resetOverheadCar(tr, tr.mesh.position.z - TOTAL - Math.random() * 40);
+      if (tr.mesh.position.z > 20) resetStreetCar(tr, tr.mesh.position.z - TOTAL - Math.random() * 40);
     }
 
     /* collisions & pickups */
@@ -180,15 +191,17 @@ function step() {
     hud.setDist(dist);
   }
 
-  /* player transform */
-  player.position.set(px, py, 0);
-  player.rotation.y = -pvx * 0.03;
-  player.rotation.z = pvx * 0.012;
-  player.rotation.x = grounded ? 0 : THREE.MathUtils.clamp(-vy * 0.045, -0.3, 0.35);
+  /* player transform — py is how far we've dropped off the deck */
+  player.position.set(px, DECK_Y - py, 0);
+  player.rotation.y = pvx * 0.03;
+  player.rotation.z = -pvx * 0.012;
+  player.rotation.x = grounded ? 0 : THREE.MathUtils.clamp(vy * 0.045, -0.35, 0.3);
   const sq = 1 - squash * 0.18;
   player.scale.set(1 + squash * 0.12, sq, 1);
+  contactShadow.position.set(px, DECK_Y - 0.06, 0);
+  contactShadow.material.opacity = Math.max(0, 0.5 - py * 0.16);
 
-  /* camera */
+  /* camera — stays right side up; the inverted car rides the ceiling */
   let camX = px * 0.55;
   const bob = reducedMotion ? 0 : Math.sin(t * 9) * 0.014 * (speed / 44) * (grounded ? 1 : 0);
   if (shake > 0) {
@@ -196,9 +209,9 @@ function step() {
     camX += Math.sin(camShakeT * 13) * shake * 0.4;
     shake = Math.max(0, shake - dt * 2);
   }
-  camera.position.set(camX, 2.7 + py * 0.35 + bob, 7.2);
-  camera.lookAt(px * 0.8, 1.8 + py * 0.45, -12);
-  camLight.position.set(px, 4, 2);
+  camera.position.set(camX, 3.0 - py * 0.25 + bob, 7.2);
+  camera.lookAt(px * 0.8, 4.6 - py * 0.4, -12);
+  camLight.position.set(px, DECK_Y - 2.5, 2);
 
   renderer.render(scene, camera);
 }
