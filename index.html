@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>高架裏 — Gravity-Flipped Shuto Runner</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <span id="speed">0 km/h</span>
+    <span id="dist">0 m</span>
+    <span id="best">BEST 0 m</span>
+  </div>
+
+  <div id="overlay">
+    <p id="over-en">Gravity-Flipped Shuto Runner</p>
+    <h1 id="over-title">高架裏</h1>
+    <p id="over-sub">重力反転。首都高の裏面が路面だ。スペース / タップでスタート</p>
+    <div id="over-stats"></div>
+    <p id="over-keys">
+      <b>← →</b> ハンドル　<b>スペース</b> ジャンプ (長押しでふわっと滞空)　<b>↑</b> 加速　<b>↓</b> ブレーキ<br />
+      橋脚は避ける、継ぎ目の段差は飛び越える。光の玉を拾うと距離ボーナス。<br />
+      スマホ: 画面下半分の左右でハンドル、上半分タップでジャンプ。
+    </p>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
