@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { makeMaterials } from './textures.js';
-import { makeCar } from './car.js';
+import { makeGiant, poseGiant } from './giant.js';
 import {
   createWorld,
   randomizeSegment,
@@ -32,22 +32,30 @@ const input = createInput(() => {
   if (state !== 'run') start();
 });
 
-/* player — an inverted car clinging to the deck underside overhead */
+/* player — an inverted giant sprinting along the deck underside */
 const player = new THREE.Group();
-const playerCar = makeCar(mats, 0x333846);
-playerCar.rotation.z = Math.PI;
-player.add(playerCar);
+const giant = makeGiant();
+const giantRig = new THREE.Group();
+giantRig.rotation.z = Math.PI;
+giantRig.add(giant.group);
+player.add(giantRig);
 scene.add(player);
-/* its headlights wash the deck surface ahead */
-const headLight = new THREE.PointLight(0xfff2d0, 25, 26, 2);
-headLight.position.set(0, -1.4, -7);
+/* a warm wash so the giant and the deck ahead stay readable */
+const headLight = new THREE.PointLight(0xffe2b0, 12, 26, 2);
+headLight.position.set(0, -2.6, -8);
 player.add(headLight);
-/* contact shadow on the deck, so the car reads as attached */
+/* contact shadow on the deck, so the giant reads as attached */
 const contactShadow = new THREE.Sprite(
   new THREE.SpriteMaterial({ map: mats.glow.map, color: 0x000000, depthWrite: false, opacity: 0.5 })
 );
-contactShadow.scale.set(4.2, 2.0, 1);
+contactShadow.scale.set(3.0, 2.2, 1);
 scene.add(contactShadow);
+
+/* run-cycle state */
+const STRIDE = 7; /* meters covered by one full leg cycle */
+let runPhase = 0;
+let airPose = 0;
+let lastStep = 0;
 
 /* ---------- state ---------- */
 let state = 'title';
@@ -137,11 +145,11 @@ function step() {
     if (px < -X_CLAMP) { px = -X_CLAMP; pvx = 0; }
     if (px > X_CLAMP) { px = X_CLAMP; pvx = 0; }
 
-    /* floaty inverted-gravity jump */
+    /* floaty inverted-gravity leap */
     if (input.consumeJump() && grounded) {
       vy = 6.8;
       grounded = false;
-      audio.blip(220, 480, 0.22, 0.18, 'triangle');
+      audio.blip(180, 420, 0.25, 0.18, 'triangle');
     }
     if (!grounded) {
       const g = input.jumpHeld() && vy > -2 ? 7 : 13;
@@ -186,16 +194,31 @@ function step() {
       }
     }
 
+    /* run cycle: phase follows distance; footfalls thud twice per cycle */
+    runPhase += (speed / STRIDE) * Math.PI * 2 * dt;
+    if (grounded) {
+      const step = Math.floor(runPhase / Math.PI);
+      if (step !== lastStep) {
+        lastStep = step;
+        audio.blip(95, 45, 0.1, 0.13, 'sine');
+      }
+    }
+
     audio.setEngine(speed, state === 'run');
     hud.setSpeed(speed * 3.6);
     hud.setDist(dist);
+  } else {
+    /* idle jog on the title / crash screen */
+    runPhase += dt * 5;
   }
+  airPose += ((grounded ? 0 : 1) - airPose) * Math.min(dt * 9, 1);
+  poseGiant(giant, runPhase, airPose, Math.min(1, Math.max(0, (speed - 15) / 29)));
 
   /* player transform — py is how far we've dropped off the deck */
   player.position.set(px, DECK_Y - py, 0);
   player.rotation.y = pvx * 0.03;
   player.rotation.z = -pvx * 0.012;
-  player.rotation.x = grounded ? 0 : THREE.MathUtils.clamp(vy * 0.045, -0.35, 0.3);
+  player.rotation.x = grounded ? 0 : THREE.MathUtils.clamp(vy * 0.03, -0.25, 0.2);
   const sq = 1 - squash * 0.18;
   player.scale.set(1 + squash * 0.12, sq, 1);
   contactShadow.position.set(px, DECK_Y - 0.06, 0);
@@ -211,7 +234,7 @@ function step() {
   }
   camera.position.set(camX, 3.0 - py * 0.25 + bob, 7.2);
   camera.lookAt(px * 0.8, 4.6 - py * 0.4, -12);
-  camLight.position.set(px, DECK_Y - 2.5, 2);
+  camLight.position.set(px, 3.6, 5.5);
 
   renderer.render(scene, camera);
 }

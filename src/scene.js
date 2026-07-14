@@ -14,7 +14,7 @@ export function createScene(canvas) {
   scene.add(new THREE.HemisphereLight(0x4a5a78, 0x241d12, 2.6));
   scene.add(new THREE.AmbientLight(0x38301f, 2.2));
 
-  const camLight = new THREE.PointLight(0xffb35c, 40, 46, 2);
+  const camLight = new THREE.PointLight(0xffb35c, 26, 46, 2);
   camLight.position.set(0, 4, 4);
   scene.add(camLight);
 
