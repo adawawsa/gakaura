@@ -280,19 +280,29 @@ export function makeCapTexture() {
   });
 }
 
+/* Low street-level buildings: a couple of window rows and a bright
+   storefront band, sized for boxes only a few meters tall. */
 export function makeBuildingTexture() {
-  return canvasTex(128, 256, (g, w, h) => {
+  return canvasTex(256, 128, (g, w, h) => {
     g.fillStyle = '#101318';
     g.fillRect(0, 0, w, h);
-    const cols = 6;
-    const rows = 14;
+    const cols = 7;
+    const rows = 2;
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        if (Math.random() < 0.28) {
+        if (Math.random() < 0.4) {
           g.fillStyle = Math.random() < 0.7 ? 'rgba(255,190,110,0.9)' : 'rgba(170,200,255,0.85)';
-          g.fillRect((x * w) / cols + 3, (y * h) / rows + 3, w / cols - 6, h / rows - 7);
+          g.fillRect((x * w) / cols + 5, (y * (h * 0.6)) / rows + 8, w / cols - 10, (h * 0.6) / rows - 14);
         }
       }
+    }
+    /* storefront band with a sign block */
+    if (Math.random() < 0.75) {
+      g.fillStyle = Math.random() < 0.5 ? 'rgba(200,225,255,0.9)' : 'rgba(255,220,150,0.9)';
+      g.fillRect(0, h - 34, w, 34);
+      g.fillStyle = ['#c04a3a', '#3a6ac0', '#3aa06a', '#c0983a'][Math.floor(Math.random() * 4)];
+      const sx = Math.random() * (w - 70);
+      g.fillRect(sx, h - 30, 60, 22);
     }
   });
 }
@@ -318,6 +328,7 @@ export function makeMaterials() {
     concrete: new THREE.MeshLambertMaterial({ map: makeConcreteTexture() }),
     capConcrete: new THREE.MeshLambertMaterial({ map: makeCapTexture() }),
     walk: new THREE.MeshLambertMaterial({ color: 0x35373a }),
+    ground: new THREE.MeshLambertMaterial({ color: 0x14161a }),
     rail: new THREE.MeshLambertMaterial({ color: 0x6b7075 }),
     glow: new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false }),
     lampHead: new THREE.MeshBasicMaterial({ color: 0xffc27a }),

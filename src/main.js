@@ -25,6 +25,8 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 
 const { renderer, scene, camera, camLight } = createScene(document.getElementById('game'));
 const mats = makeMaterials();
+/* keep the panel grid crisp at grazing angles across the wide slab */
+mats.deckFloor.map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 const { segments, pools, traffic } = createWorld(scene, mats);
 const hud = createHud();
 const audio = createAudio();
