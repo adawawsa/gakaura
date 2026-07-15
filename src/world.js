@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { makeBuildingTexture } from './textures.js';
+import { makeBuildingTexture, makeTowerTexture } from './textures.js';
 import { makeCar } from './car.js';
 
 export const SEG_LEN = 30;
@@ -12,24 +12,26 @@ export const X_CLAMP = 11.3;
 
 const BODY_COLORS = [0x2b2f38, 0x3a3f4a, 0x54585f, 0x6e3030, 0x2e4a3a, 0x8a8f96];
 
-export const DECK_W = 400; /* the panel ceiling runs to the horizon */
+/* Distant parallel expressway lines: [x offset, deck height] */
+const VIADUCTS = [[-58, 9.2], [58, 9.2], [-88, 12.6], [88, 12.6]];
 
 export function createWorld(scene, mats) {
   const segments = [];
   const pools = [];
   const traffic = [];
 
-  /* the deck texture tiles 8 panels (13 m) per repeat across the width */
-  mats.deckFloor.map.repeat.set(DECK_W / 13, 2);
+  /* texture pools so recycling segments never re-renders canvases */
+  const towerTexs = Array.from({ length: 8 }, makeTowerTexture);
+  const shopTexs = Array.from({ length: 6 }, makeBuildingTexture);
 
   /* ---------- segments ---------- */
   const streetGeo = new THREE.PlaneGeometry(26, SEG_LEN);
-  const groundGeo = new THREE.PlaneGeometry(DECK_W, SEG_LEN);
-  const deckGeo = new THREE.PlaneGeometry(DECK_W, SEG_LEN);
+  const groundGeo = new THREE.PlaneGeometry(300, SEG_LEN);
+  const deckGeo = new THREE.PlaneGeometry(26, SEG_LEN);
+  const fasciaGeo = new THREE.BoxGeometry(0.7, 2.2, SEG_LEN);
   const seamGeo = new THREE.BoxGeometry(0.5, 0.1, SEG_LEN);
-  const ribGeo = new THREE.BoxGeometry(0.3, 0.18, SEG_LEN);
-  const jointGeo = new THREE.BoxGeometry(DECK_W, 0.22, 0.5);
-  const farShaftGeo = new THREE.BoxGeometry(2.2, DECK_Y, 1.6);
+  const viaductGeo = new THREE.BoxGeometry(14, 1.5, SEG_LEN);
+  const viaductPierGeo = new THREE.BoxGeometry(2.4, 12.6, 2.0);
   const ridgeGeo = new THREE.BoxGeometry(25, 1, 0.9);
   const walkGeo = new THREE.BoxGeometry(3, 0.25, SEG_LEN);
   const shaftGeo = new THREE.BoxGeometry(2.2, DECK_Y - 1.05, 1.6);
@@ -56,34 +58,34 @@ export function createWorld(scene, mats) {
       seg.add(wSide);
     }
 
-    /* the deck underside overhead — one slab of panels to the horizon */
+    /* the deck underside overhead — our viaduct, real expressway width */
     const deck = new THREE.Mesh(deckGeo, mats.deckFloor);
     deck.rotation.x = Math.PI / 2;
     deck.position.y = DECK_Y;
     seg.add(deck);
 
-    /* girder seams near the play area, thinner ribs marching outward */
+    /* green fascia bands at the deck edges — night sky opens beyond them */
+    for (const x of [-12.6, 12.6]) {
+      const f = new THREE.Mesh(fasciaGeo, mats.girder);
+      f.position.set(x, DECK_Y + 0.7, 0);
+      seg.add(f);
+    }
+    /* flat girder seams on the underside */
     for (const x of [-8, -3, 3, 8]) {
       const s = new THREE.Mesh(seamGeo, mats.girderPlain);
       s.position.set(x, DECK_Y - 0.05, 0);
       seg.add(s);
     }
-    for (const x of [-16, 16, -28, 28, -45, 45, -70, 70, -110, 110]) {
-      const r = new THREE.Mesh(ribGeo, mats.girderPlain);
-      r.position.set(x, DECK_Y - 0.09, 0);
-      seg.add(r);
-    }
 
-    /* every segment: the expansion joint runs right across the slab */
-    const jointLine = new THREE.Mesh(jointGeo, mats.girderPlain);
-    jointLine.position.set(0, DECK_Y - 0.11, RIDGE_Z);
-    seg.add(jointLine);
-
-    /* column forest marching to the horizon on both sides */
-    for (const [fx, fz] of [[-22, 0], [22, 3], [-40, -4], [40, 1], [-65, 2], [65, -3], [-95, -1], [95, 4]]) {
-      const c = new THREE.Mesh(farShaftGeo, mats.concrete);
-      c.position.set(fx, DECK_Y / 2, PILLAR_Z + fz);
-      seg.add(c);
+    /* distant parallel expressway lines layered against the skyline */
+    for (const [vx, vy] of VIADUCTS) {
+      const slab = new THREE.Mesh(viaductGeo, mats.girderPlain);
+      slab.position.set(vx, vy, 0);
+      seg.add(slab);
+      const pier = new THREE.Mesh(viaductPierGeo, mats.concrete);
+      pier.position.set(vx, vy / 2 - 0.75, PILLAR_Z + (vx > 0 ? 6 : -4));
+      pier.scale.y = (vy - 0.75) / 12.6;
+      seg.add(pier);
     }
 
     /* pillar: shaft rises from the street, hammerhead cap meets the deck */
@@ -120,18 +122,22 @@ export function createWorld(scene, mats) {
     lampGlow.position.copy(head.position);
     seg.add(lampGlow);
 
-    /* low street-level buildings scattered under the endless slab */
+    /* city: low shops near the street, tower skyline further out */
+    seg.userData.towerTexs = towerTexs;
+    seg.userData.shopTexs = shopTexs;
     seg.userData.buildings = [];
     for (const s of [-1, 1]) {
-      const b = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshBasicMaterial({ map: makeBuildingTexture() })
-      );
-      seg.add(b);
-      seg.userData.buildings.push({ mesh: b, side: s });
+      const shop = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ map: shopTexs[0] }));
+      seg.add(shop);
+      seg.userData.buildings.push({ mesh: shop, side: s, kind: 'shop' });
+      for (let k = 0; k < 2; k++) {
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ map: towerTexs[0] }));
+        seg.add(tower);
+        seg.userData.buildings.push({ mesh: tower, side: s, kind: 'tower' });
+      }
     }
 
-    /* sodium dots scattered across the far underside */
+    /* sodium lamps dotting the distant viaducts and side streets */
     seg.userData.farGlows = [];
     for (let gi = 0; gi < 4; gi++) {
       const fg = new THREE.Sprite(mats.glow);
@@ -184,29 +190,38 @@ export function createWorld(scene, mats) {
 export function randomizeSegment(seg) {
   const u = seg.userData;
   for (const bd of u.buildings) {
-    /* low shops and sheds — nothing tall enough to pierce the slab */
-    const hgt = 3 + Math.random() * 2.8;
-    const dep = 8 + Math.random() * 12;
-    const wid = 8 + Math.random() * 8;
-    bd.mesh.visible = Math.random() < 0.7;
-    bd.mesh.scale.set(wid, hgt, dep);
-    bd.mesh.position.set(
-      bd.side * (17 + Math.random() * 34),
-      hgt / 2,
-      -SEG_LEN / 2 + Math.random() * 8
-    );
-    bd.mesh.material.map = makeBuildingTexture();
+    if (bd.kind === 'shop') {
+      /* low shops tucked near the street, well under the deck's shadow */
+      const hgt = 2.5 + Math.random() * 1.6;
+      const dep = 8 + Math.random() * 10;
+      const wid = 8 + Math.random() * 6;
+      bd.mesh.visible = Math.random() < 0.55;
+      bd.mesh.scale.set(wid, hgt, dep);
+      bd.mesh.position.set(bd.side * (18 + Math.random() * 12), hgt / 2, -SEG_LEN / 2 + Math.random() * 8);
+      bd.mesh.material.map = u.shopTexs[Math.floor(Math.random() * u.shopTexs.length)];
+    } else {
+      /* skyline pushed far out so sky and viaducts show past the deck edge */
+      const hgt = 10 + Math.random() * 20;
+      const dep = 12 + Math.random() * 18;
+      const wid = 12 + Math.random() * 12;
+      bd.mesh.visible = Math.random() < 0.8;
+      bd.mesh.scale.set(wid, hgt, dep);
+      bd.mesh.position.set(bd.side * (60 + Math.random() * 80), hgt / 2, -SEG_LEN / 2 + Math.random() * 12);
+      bd.mesh.material.map = u.towerTexs[Math.floor(Math.random() * u.towerTexs.length)];
+    }
     bd.mesh.material.needsUpdate = true;
   }
 
-  for (const fg of u.farGlows) {
-    const side = Math.random() < 0.5 ? -1 : 1;
-    fg.position.set(
-      side * (16 + Math.random() * 120),
-      DECK_Y - 1.1 - Math.random() * 1.5,
-      -SEG_LEN / 2 + Math.random() * SEG_LEN
-    );
-  }
+  /* lamps along the distant viaducts, plus stray street lights below */
+  u.farGlows.forEach((fg, k) => {
+    if (k < 2) {
+      const [vx, vy] = VIADUCTS[Math.floor(Math.random() * VIADUCTS.length)];
+      fg.position.set(vx + (Math.random() * 10 - 5), vy - 1.2, -SEG_LEN / 2 + Math.random() * SEG_LEN);
+    } else {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      fg.position.set(side * (20 + Math.random() * 90), 4.4, -SEG_LEN / 2 + Math.random() * SEG_LEN);
+    }
+  });
 
   u.hasRidge = Math.random() < 0.55;
   u.ridgeH = 0.6 + Math.random() * 0.35;

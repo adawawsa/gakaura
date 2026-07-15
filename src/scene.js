@@ -5,7 +5,7 @@ export function createScene(canvas) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0e12);
-  scene.fog = new THREE.Fog(0x0a0e12, 40, 260);
+  scene.fog = new THREE.Fog(0x0a0e12, 40, 300);
 
   const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 400);
 

@@ -280,6 +280,29 @@ export function makeCapTexture() {
   });
 }
 
+/* Mid-rise tower facades for the skyline beyond the deck edges. */
+export function makeTowerTexture() {
+  return canvasTex(128, 256, (g, w, h) => {
+    g.fillStyle = '#0e1116';
+    g.fillRect(0, 0, w, h);
+    const cols = 6;
+    const rows = 14;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (Math.random() < 0.3) {
+          g.fillStyle = Math.random() < 0.7 ? 'rgba(255,190,110,0.9)' : 'rgba(170,200,255,0.85)';
+          g.fillRect((x * w) / cols + 3, (y * h) / rows + 3, w / cols - 6, h / rows - 7);
+        }
+      }
+    }
+    /* rooftop aviation light */
+    if (Math.random() < 0.5) {
+      g.fillStyle = 'rgba(255,60,50,0.95)';
+      g.fillRect(w / 2 - 3, 2, 6, 6);
+    }
+  });
+}
+
 /* Low street-level buildings: a couple of window rows and a bright
    storefront band, sized for boxes only a few meters tall. */
 export function makeBuildingTexture() {
