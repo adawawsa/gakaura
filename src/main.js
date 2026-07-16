@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createScene } from './scene.js';
 import { makeMaterials } from './textures.js';
 import { makeGiant, poseGiant } from './giant.js';
@@ -34,7 +35,9 @@ const input = createInput(() => {
   if (state !== 'run') start();
 });
 
-/* player — an inverted giant sprinting along the deck underside */
+/* player — an inverted giant sprinting along the deck underside.
+   Starts as the procedural box giant, hot-swapped for the Blender-made
+   GLB once it loads (same joint names, same pose driver). */
 const player = new THREE.Group();
 const giant = makeGiant();
 const giantRig = new THREE.Group();
@@ -42,6 +45,23 @@ giantRig.rotation.z = Math.PI;
 giantRig.add(giant.group);
 player.add(giantRig);
 scene.add(player);
+
+new GLTFLoader().load('giant.glb', (gltf) => {
+  const root = gltf.scene;
+  const j = (n) => root.getObjectByName(n);
+  if (!j('HipL') || !j('Torso')) return; /* unexpected rig — keep the box giant */
+  root.rotation.y = Math.PI; /* Blender's -Y forward arrives as +Z; face -Z */
+  giantRig.remove(giant.group);
+  giant.group = root;
+  giant.torso = j('Torso');
+  giant.pelvis = j('Pelvis');
+  giant.head = j('Head');
+  giant.legL = { hip: j('HipL'), knee: j('KneeL') };
+  giant.legR = { hip: j('HipR'), knee: j('KneeR') };
+  giant.armL = { shoulder: j('ShoulderL'), elbow: j('ElbowL') };
+  giant.armR = { shoulder: j('ShoulderR'), elbow: j('ElbowR') };
+  giantRig.add(root);
+});
 /* a warm wash so the giant and the deck ahead stay readable */
 const headLight = new THREE.PointLight(0xffe2b0, 12, 26, 2);
 headLight.position.set(0, -2.6, -8);
