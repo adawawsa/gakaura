@@ -17,6 +17,7 @@ import {
 } from './world.js';
 import { frame, arcDelta, LOOP_LEN } from './path.js';
 import { createCity } from './city.js';
+import landmarks from './c1landmarks.json';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createHud } from './hud.js';
@@ -108,6 +109,29 @@ try {
 } catch { /* private mode */ }
 hud.setBest(best);
 
+/* landmark toasts + lap counting along the real loop */
+let lap = 0;
+let nextLm = 0;
+function resetLandmarks() {
+  lap = 0;
+  nextLm = 0;
+}
+function checkLandmarks() {
+  if (nextLm >= landmarks.length) {
+    if (S >= (lap + 1) * LOOP_LEN) {
+      lap++;
+      nextLm = 0;
+      hud.showToast(`LAP ${lap + 1} — 都心環状線を一周した`);
+    }
+    return;
+  }
+  const [ls, name] = landmarks[nextLm];
+  if (S >= ls + lap * LOOP_LEN) {
+    hud.showToast(`${name} 通過`);
+    nextLm++;
+  }
+}
+
 function segForSlot(slot) {
   return segments[((slot % SEG_COUNT) + SEG_COUNT) % SEG_COUNT];
 }
@@ -115,7 +139,7 @@ function segForSlot(slot) {
 function layoutSegments() {
   for (let k = 0; k < SEG_COUNT; k++) {
     const slot = firstSlot + k;
-    assignSegment(segForSlot(slot), slot, slot < 6);
+    assignSegment(segForSlot(slot), slot, slot < firstSlot + 8);
   }
 }
 
@@ -136,6 +160,7 @@ function start() {
   input.consumeJump();
 
   firstSlot = -3;
+  resetLandmarks();
   layoutSegments();
   traffic.forEach((t, i) => {
     resetStreetCar(t, 40 + i * 40);
@@ -158,6 +183,16 @@ function gameOver() {
   hud.showGameOver(dist, topSpeed * 3.6, best);
   hud.setBest(best);
 }
+
+/* debug: jump to an arc position (used by automated tests) */
+window.__gaku = {
+  setS(v) {
+    S = v;
+    dist = v;
+    firstSlot = Math.floor(v / SEG_LEN) - 3;
+    layoutSegments();
+  },
+};
 
 /* ---------- loop ---------- */
 const clock = new THREE.Clock();
@@ -246,9 +281,10 @@ function step() {
       }
     }
 
+    checkLandmarks();
     audio.setEngine(speed, state === 'run');
     hud.setSpeed(speed * 3.6);
-    hud.setDist(dist);
+    hud.setDist(dist, lap);
   } else {
     /* idle jog on the title / crash screen */
     runPhase += dt * 5;

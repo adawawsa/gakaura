@@ -330,6 +330,45 @@ export function makeBuildingTexture() {
   });
 }
 
+/* Night river: near-black water with vertical smears of reflected city light. */
+export function makeWaterTexture() {
+  const t = canvasTex(256, 512, (g, w, h) => {
+    g.fillStyle = '#0a1216';
+    g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) {
+      const x = Math.random() * w;
+      const len = 40 + Math.random() * 160;
+      const y = Math.random() * h;
+      const warm = Math.random() < 0.6;
+      g.strokeStyle = warm
+        ? `rgba(255,180,90,${0.10 + Math.random() * 0.2})`
+        : `rgba(160,200,255,${0.08 + Math.random() * 0.16})`;
+      g.lineWidth = 1.5 + Math.random() * 3;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + (Math.random() * 4 - 2), y + len);
+      g.stroke();
+    }
+    /* faint ripple bands */
+    g.fillStyle = 'rgba(255,255,255,0.02)';
+    for (let y = 0; y < h; y += 9) g.fillRect(0, y, w, 2);
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/* Bare ground / embankment under sections with no street. */
+export function makeBareTexture() {
+  return canvasTex(128, 256, (g, w, h) => {
+    g.fillStyle = '#171a16';
+    g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 700; i++) {
+      g.fillStyle = `rgba(${Math.random() < 0.5 ? '40,46,36' : '10,12,10'},${Math.random() * 0.5})`;
+      g.fillRect(Math.random() * w, Math.random() * h, 3, 3);
+    }
+  });
+}
+
 export function makeGlowTexture() {
   return canvasTex(128, 128, (g, w, h) => {
     const r = g.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2);
@@ -352,6 +391,9 @@ export function makeMaterials() {
     capConcrete: new THREE.MeshLambertMaterial({ map: makeCapTexture() }),
     walk: new THREE.MeshLambertMaterial({ color: 0x35373a }),
     ground: new THREE.MeshLambertMaterial({ color: 0x14161a }),
+    /* unlit: the reflected city light should glow regardless of lamps */
+    water: new THREE.MeshBasicMaterial({ map: makeWaterTexture() }),
+    bare: new THREE.MeshLambertMaterial({ map: makeBareTexture() }),
     rail: new THREE.MeshLambertMaterial({ color: 0x6b7075 }),
     glow: new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false }),
     lampHead: new THREE.MeshBasicMaterial({ color: 0xffc27a }),

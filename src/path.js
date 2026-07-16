@@ -1,4 +1,5 @@
 import data from './c1path.json';
+import terrain from './c1terrain.json';
 
 /* The real Shuto C1 inner-loop alignment, sampled every `step` meters.
    Source: © OpenStreetMap contributors (ODbL). */
@@ -72,4 +73,10 @@ export function frame(s, out = {}) {
 
 export function radiusAt(s) {
   return radii[Math.floor(wrap(s) / STEP) % N];
+}
+
+/* What lies under the deck at arc s: 0 = street, 1 = water, 2 = bare ground.
+   Derived from OSM surface roads and water polygons. */
+export function terrainAt(s) {
+  return terrain[Math.floor(wrap(s) / STEP) % N];
 }

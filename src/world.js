@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { makeCar } from './car.js';
-import { frame, arcDelta, radiusAt, LOOP_LEN } from './path.js';
+import { frame, arcDelta, radiusAt, terrainAt, LOOP_LEN } from './path.js';
 
 export const SEG_LEN = 10; /* short slots so segments hug the real curve */
 export const SEG_COUNT = 36;
@@ -43,20 +43,23 @@ export function createWorld(scene, mats) {
   for (let i = 0; i < SEG_COUNT; i++) {
     const seg = new THREE.Group();
     const u = seg.userData;
+    u.mats = mats;
 
     /* dark ground below with the detailed street at center */
     const ground = new THREE.Mesh(groundGeo, mats.ground);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.03 - (i % 2) * 0.004;
     seg.add(ground);
-    const street = new THREE.Mesh(streetGeo, mats.street);
-    street.rotation.x = -Math.PI / 2;
-    street.position.y = (i % 2) * 0.004;
-    seg.add(street);
+    u.street = new THREE.Mesh(streetGeo, mats.street);
+    u.street.rotation.x = -Math.PI / 2;
+    u.street.position.y = (i % 2) * 0.004;
+    seg.add(u.street);
+    u.walks = [];
     for (const x of [-11, 11]) {
       const wSide = new THREE.Mesh(walkGeo, mats.walk);
       wSide.position.set(x, 0.12, 0);
       seg.add(wSide);
+      u.walks.push(wSide);
     }
 
     /* the deck underside overhead — our viaduct */
@@ -176,6 +179,11 @@ export function assignSegment(seg, slot, safe = false) {
   seg.position.set(_f.x, 0, _f.z);
   seg.rotation.y = _f.yaw;
 
+  /* what the real city has under this stretch of deck */
+  const ter = terrainAt(sc);
+  u.street.material = ter === 1 ? u.mats.water : ter === 2 ? u.mats.bare : u.mats.street;
+  for (const w of u.walks) w.visible = ter === 0;
+
   /* hazards: a pillar every 3rd slot, ridges scattered between */
   u.hasPillar = !safe && slot % 3 === 0;
   u.cap.visible = u.hasPillar;
@@ -191,8 +199,8 @@ export function assignSegment(seg, slot, safe = false) {
     m.position.y = DECK_Y - (u.ridgeH + 0.5);
   }
 
-  /* lamp on middle slots, alternating sides */
-  u.lamp.visible = slot % 3 === 1;
+  /* lamp on middle slots (street sections only), alternating sides */
+  u.lamp.visible = slot % 3 === 1 && ter === 0;
   u.lamp.position.set(slot % 2 === 0 ? 9.8 : -9.8, 0, 0);
 
   /* distant viaducts can't follow tight corners — hide them there */
@@ -237,6 +245,8 @@ export function placeStreetCar(t) {
   frame(t.s, _f);
   t.mesh.position.set(_f.x + _f.nx * t.lane, 0, _f.z + _f.nz * t.lane);
   t.mesh.rotation.y = _f.yaw + (t.dir === 1 ? 0 : Math.PI);
+  /* cars only exist where there is actually a street below */
+  t.mesh.visible = terrainAt(t.s) === 0;
 }
 
 /* py = how far the player has dropped from the deck underside.

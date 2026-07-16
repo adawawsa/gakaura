@@ -15,6 +15,8 @@
 
 - 橋脚のハンマーヘッドは左右に避ける (中央の柱はジャンプでもかわせない)
 - 継ぎ目の梁はジャンプでくぐる (オレンジの光が目印)
+- 眼下は実データ準拠で切り替わる: 街路 (59%) / 日本橋川などの水面 (16%) / その他 (25%)
+- 江戸橋 JCT・竹橋 JCT など 13 地点の通過表示、一周でラップ加算
 - 光の玉を拾うと距離 +25m
 - ベスト記録は localStorage に保存
 
@@ -44,3 +46,4 @@ npm run preview  # ビルド結果の確認
 
 - コース線形: © OpenStreetMap contributors (ODbL)
 - 沿線建物 (`src/buildings.json`): 国土交通省 Project PLATEAU 3D都市モデル (東京都23区 LOD1) を加工して作成
+- 眼下の地形分類 (`src/c1terrain.json`): OSM の道路・水面データから算出 (© OpenStreetMap contributors)

@@ -60,6 +60,28 @@ body {
   letter-spacing: 0.08em;
 }
 
+#toast {
+  position: fixed;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 22px;
+  background: rgba(6, 9, 12, 0.6);
+  border-left: 3px solid var(--sodium);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  transition: opacity 0.4s;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+#toast.hidden {
+  opacity: 0;
+}
+
 #overlay {
   position: fixed;
   inset: 0;
