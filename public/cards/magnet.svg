@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 260" role="img" aria-label="">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#10121b"/>
+      <stop offset="1" stop-color="#07090d"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="50%" cy="50%" r="50%">
+      <stop stop-color="#fff8d5"/>
+      <stop offset=".45" stop-color="#ffb84d"/>
+      <stop offset="1" stop-color="#ff9d2e" stop-opacity=".08"/>
+    </radialGradient>
+  </defs>
+  <rect width="420" height="260" fill="url(#bg)"/>
+  <path d="M0 190 420 82v178H0z" fill="#10161d"/>
+  <path d="M0 204 420 96" stroke="#ff9d2e" stroke-opacity=".28" stroke-width="4"/>
+  <g fill="url(#orb)">
+    <circle cx="80" cy="68" r="14"/>
+    <circle cx="340" cy="64" r="10"/>
+    <circle cx="72" cy="186" r="12"/>
+    <circle cx="336" cy="190" r="16"/>
+    <circle cx="210" cy="36" r="9"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M147 84v70c0 41 28 67 63 67s63-26 63-67V84h-42v67c0 18-8 30-21 30s-21-12-21-30V84z" fill="#222b35" stroke="#ffd68a" stroke-width="8"/>
+    <path d="M147 84h42M231 84h42" stroke="#ff4d3d" stroke-width="22"/>
+    <path d="M118 76c-29 20-48 52-49 89M302 76c29 20 48 52 49 89M106 58c-42 29-69 76-70 130M314 58c42 29 69 76 70 130" stroke="#ffb84d" stroke-opacity=".62" stroke-width="5"/>
+    <path d="M88 165c35-18 66-25 93-20M332 166c-35-18-66-25-93-20" stroke="#fff0b2" stroke-opacity=".8" stroke-width="4"/>
+  </g>
+</svg>

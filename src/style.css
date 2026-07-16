@@ -134,18 +134,22 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   padding: 0 16px;
+  max-width: min(100vw, 720px);
 }
 
 .card {
-  width: 200px;
-  padding: 18px 16px;
+  width: 210px;
+  min-height: 286px;
+  padding: 0 0 16px;
   background: #12161c;
   border: 1px solid rgba(255, 157, 46, 0.45);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--ink);
   font-family: "Hiragino Sans", system-ui, sans-serif;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
 }
 
 .card:hover,
@@ -153,6 +157,29 @@ body {
   border-color: var(--amber);
   background: #1a2028;
   outline: none;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(255, 157, 46, 0.22);
+}
+
+.cardimg {
+  display: block;
+  height: 130px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 157, 46, 0.3);
+  margin-bottom: 12px;
+}
+
+.cardimg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card .cl,
+.card h3,
+.card p {
+  padding: 0 16px;
 }
 
 .card h3 {
@@ -172,6 +199,55 @@ body {
   font-size: 0.82rem;
   line-height: 1.6;
   color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  #cards {
+    justify-content: flex-start;
+    padding-top: max(24px, env(safe-area-inset-top));
+    overflow-y: auto;
+  }
+
+  #cards-title {
+    font-size: 1rem;
+    letter-spacing: 0.16em;
+  }
+
+  #cards-row {
+    gap: 10px;
+    padding: 0 10px 20px;
+  }
+
+  .card {
+    width: min(30vw, 180px);
+    min-width: 112px;
+    min-height: 238px;
+    padding-bottom: 12px;
+  }
+
+  .cardimg {
+    height: 92px;
+    margin-bottom: 10px;
+  }
+
+  .card .cl,
+  .card h3,
+  .card p {
+    padding: 0 10px;
+  }
+
+  .card h3 {
+    font-size: 0.92rem;
+  }
+
+  .card .cl {
+    font-size: 0.6rem;
+  }
+
+  .card p {
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
 }
 
 #toast {

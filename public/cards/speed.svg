@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 260" role="img" aria-label="">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#16120e"/>
+      <stop offset="1" stop-color="#07090d"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" x2="1">
+      <stop stop-color="#ffb84d" stop-opacity="0"/>
+      <stop offset=".45" stop-color="#ffb84d" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#fff3c2"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="260" fill="url(#bg)"/>
+  <path d="M0 190 420 82v178H0z" fill="#10161d"/>
+  <path d="M0 204 420 96" stroke="#ff9d2e" stroke-opacity=".32" stroke-width="4"/>
+  <g stroke="url(#trail)" stroke-linecap="round">
+    <path d="M28 68h260" stroke-width="8"/>
+    <path d="M70 108h300" stroke-width="6"/>
+    <path d="M34 151h246" stroke-width="7"/>
+    <path d="M86 198h250" stroke-width="5"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M226 55c34 14 58 47 58 86 0 51-41 92-92 92s-92-41-92-92c0-39 24-72 58-86" stroke="#ffd68a" stroke-width="9"/>
+    <path d="M192 142l66-59-33 78 45 11-100 38 26-54-43-13z" fill="#ffb84d" stroke="#fff0b2" stroke-width="7"/>
+    <path d="M128 142h-42M306 142h38M192 70V34" stroke="#ff9d2e" stroke-width="7"/>
+  </g>
+</svg>

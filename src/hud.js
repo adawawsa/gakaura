@@ -28,7 +28,27 @@ export function createHud() {
         const lv = levels[u.id] || 0;
         const btn = document.createElement('button');
         btn.className = 'card';
-        btn.innerHTML = `<span class="cl">${i + 1} ｜ Lv ${lv} → ${lv + 1}</span><h3>${u.name}</h3><p>${u.desc[lv]}</p>`;
+
+        const art = document.createElement('span');
+        art.className = 'cardimg';
+        const img = document.createElement('img');
+        img.src = `cards/${u.id}.svg`;
+        img.alt = '';
+        img.decoding = 'async';
+        img.addEventListener('error', () => art.remove(), { once: true });
+        art.appendChild(img);
+
+        const meta = document.createElement('span');
+        meta.className = 'cl';
+        meta.textContent = `${i + 1} ｜ Lv ${lv} → ${lv + 1}`;
+
+        const title = document.createElement('h3');
+        title.textContent = u.name;
+
+        const desc = document.createElement('p');
+        desc.textContent = u.desc[lv];
+
+        btn.append(art, meta, title, desc);
         btn.addEventListener('click', () => onPick(u));
         cardsRow.appendChild(btn);
       });
