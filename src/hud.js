@@ -32,10 +32,17 @@ export function createHud() {
         const art = document.createElement('span');
         art.className = 'cardimg';
         const img = document.createElement('img');
-        img.src = `cards/${u.id}.svg`;
+        img.src = `cards/${u.id}.webp`;
         img.alt = '';
         img.decoding = 'async';
-        img.addEventListener('error', () => art.remove(), { once: true });
+        img.addEventListener('error', () => {
+          if (img.dataset.fallback) {
+            art.remove();
+            return;
+          }
+          img.dataset.fallback = 'true';
+          img.src = `cards/${u.id}.svg`;
+        });
         art.appendChild(img);
 
         const meta = document.createElement('span');
