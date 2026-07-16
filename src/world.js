@@ -17,12 +17,6 @@ const BODY_COLORS = [0x2b2f38, 0x3a3f4a, 0x54585f, 0x6e3030, 0x2e4a3a, 0x8a8f96]
 
 const _f = {};
 
-/* difficulty knob: probability of a joint ridge per non-pillar slot */
-let ridgeProb = 0.28;
-export function setRidgeProbability(p) {
-  ridgeProb = p;
-}
-
 /* Remove a segment's hazard (smashed by the giant). */
 export function destroyHazard(seg) {
   const u = seg.userData;
@@ -201,12 +195,12 @@ export function assignSegment(seg, slot, safe = false) {
   u.street.material = ter === 1 ? u.mats.water : ter === 2 ? u.mats.bare : u.mats.street;
   for (const w of u.walks) w.visible = ter === 0;
 
-  /* hazards: a pillar every 3rd slot, ridges scattered between */
-  u.hasPillar = !safe && slot % 3 === 0;
+  /* Endless-run mode: keep the underside completely clear. */
+  u.hasPillar = false;
   u.cap.visible = u.hasPillar;
   u.shaft.visible = u.hasPillar;
 
-  u.hasRidge = !safe && !u.hasPillar && Math.random() < ridgeProb;
+  u.hasRidge = false;
   u.ridgeH = 0.6 + Math.random() * 0.35;
   u.ridge.visible = u.hasRidge;
   u.ridge.scale.y = u.ridgeH;
@@ -238,9 +232,9 @@ export function assignSegment(seg, slot, safe = false) {
     }
   }
 
-  /* orbs: an arc under a ridge, or a rare shallow run */
-  const overRidge = u.hasRidge && Math.random() < 0.75;
-  const showRun = !overRidge && !u.hasPillar && Math.random() < 0.12;
+  /* collectible runs remain even though the route has no hazards */
+  const overRidge = false;
+  const showRun = Math.random() < 0.2;
   const ox = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 5);
   const drops = overRidge ? [1.1, 2.1, 1.1] : [0.7, 0.7, 0.7];
   u.orbs.forEach((ob, k) => {
@@ -269,17 +263,7 @@ export function placeStreetCar(t) {
 /* py = how far the player has dropped from the deck underside.
    Returns { type, seg } for a hit hazard, or null. */
 export function collide(segments, S, px, py) {
-  for (const seg of segments) {
-    const u = seg.userData;
-    if (!u.hasPillar && !u.hasRidge) continue;
-    const d = arcDelta(S, u.sCenter);
-
-    if (u.hasPillar && Math.abs(d) < 2.9) {
-      if (Math.abs(px) < 4.0 && py < 1.05) return { type: 'pillar', seg };
-      if (Math.abs(px) < 1.9 && py + 1.15 > 1.05) return { type: 'pillar', seg };
-    }
-    if (u.hasRidge && Math.abs(d) < 2.35 && py < u.ridgeH - 0.12) return { type: 'ridge', seg };
-  }
+  /* Kept as a compatibility hook: endless-run mode has no lethal collisions. */
   return null;
 }
 
