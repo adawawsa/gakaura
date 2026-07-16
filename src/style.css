@@ -41,12 +41,133 @@ body {
   pointer-events: none;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
   font-variant-numeric: tabular-nums;
+  z-index: 3;
+}
+
+#velocity-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 #speed {
   font-size: 1.35rem;
   color: var(--amber);
   letter-spacing: 0.04em;
+}
+
+#speed-stage {
+  font-size: 0.64rem;
+  color: var(--dim);
+  letter-spacing: 0.22em;
+}
+
+#syncwrap {
+  position: fixed;
+  top: 66px;
+  left: 18px;
+  display: grid;
+  grid-template-columns: auto 112px 34px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  pointer-events: none;
+  text-shadow: 0 1px 4px #000;
+  z-index: 3;
+}
+
+#syncrail {
+  height: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+#syncbar {
+  width: 100%;
+  height: 100%;
+  background: #6ee7ff;
+  box-shadow: 0 0 8px #42d7ff;
+  transition: width 0.12s, background 0.2s;
+}
+
+#syncbar.danger {
+  background: #ff4d36;
+  box-shadow: 0 0 10px #ff3018;
+}
+
+#syncvalue {
+  color: var(--ink);
+  font-weight: 400;
+}
+
+#velocity-fx,
+#sonic-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+#velocity-fx {
+  z-index: 2;
+  opacity: var(--velocity-intensity, 0);
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+#velocity-fx::before,
+#velocity-fx::after {
+  content: "";
+  position: absolute;
+  inset: -35%;
+  background: repeating-linear-gradient(
+    100deg,
+    transparent 0 38px,
+    rgba(120, 220, 255, 0.08) 40px,
+    transparent 43px 82px
+  );
+  transform: perspective(500px) rotateX(12deg) scaleX(2.2);
+  animation: velocity-streak 0.32s linear infinite;
+}
+
+#velocity-fx::after {
+  background: repeating-linear-gradient(
+    84deg,
+    transparent 0 71px,
+    rgba(255, 177, 74, 0.07) 73px,
+    transparent 76px 151px
+  );
+  animation-duration: 0.19s;
+}
+
+#sonic-flash {
+  z-index: 8;
+  opacity: 0;
+  background: white;
+}
+
+#sonic-flash.boom {
+  animation: sonic-boom 1.15s ease-out;
+}
+
+body[data-speed-stage="4"] #game,
+body[data-speed-stage="5"] #game,
+body[data-speed-stage="6"] #game {
+  filter: saturate(1.25) contrast(1.08);
+}
+
+@keyframes velocity-streak {
+  from { translate: 0 -10%; }
+  to { translate: -12% 10%; }
+}
+
+@keyframes sonic-boom {
+  0% { opacity: 0; }
+  8% { opacity: 0.95; }
+  17% { opacity: 0.12; }
+  32% { opacity: 0.52; }
+  100% { opacity: 0; }
 }
 
 #dist {
@@ -69,6 +190,7 @@ body {
   color: var(--amber);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
   pointer-events: none;
+  z-index: 3;
 }
 
 #xpwrap {
@@ -81,6 +203,7 @@ body {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 5px;
   pointer-events: none;
+  z-index: 3;
 }
 
 #xpbar {
@@ -202,6 +325,11 @@ body {
 }
 
 @media (max-width: 720px) {
+  #syncwrap {
+    top: 64px;
+    grid-template-columns: auto 74px 30px;
+  }
+
   #cards {
     justify-content: flex-start;
     padding-top: max(24px, env(safe-area-inset-top));
@@ -266,6 +394,7 @@ body {
   pointer-events: none;
   transition: opacity 0.4s;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  z-index: 4;
 }
 
 #toast.hidden {
@@ -285,6 +414,7 @@ body {
   text-align: center;
   padding: 24px;
   transition: opacity 0.35s;
+  z-index: 4;
 }
 
 #overlay.hidden {
@@ -345,5 +475,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   #overlay {
     transition: none;
+  }
+
+  #velocity-fx::before,
+  #velocity-fx::after,
+  #sonic-flash.boom {
+    animation: none;
   }
 }

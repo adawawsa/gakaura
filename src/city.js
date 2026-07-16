@@ -38,6 +38,7 @@ export function createCity(scene) {
   }
 
   const collapsing = [];
+  let velocityStage = -1;
 
   function setEntryMatrix(e, scaleY, sink) {
     M.makeScale(e.w, Math.max(0.05, e.h * scaleY), e.d);
@@ -47,6 +48,19 @@ export function createCity(scene) {
   }
 
   return {
+    setVelocity(kmh, stage) {
+      if (stage === velocityStage) return;
+      velocityStage = stage;
+      const colors = [0xffffff, 0xe8f4ff, 0xb8dcff, 0x83c5ff, 0x66baff, 0xc28cff, 0xff77d5];
+      const opacity = stage < 3 ? 1 : Math.max(0.2, 1 - (stage - 2) * 0.18);
+      for (const m of mats) {
+        m.color.setHex(colors[Math.min(stage, colors.length - 1)]);
+        m.transparent = opacity < 1;
+        m.opacity = opacity;
+        m.blending = stage >= 4 ? THREE.AdditiveBlending : THREE.NormalBlending;
+        m.needsUpdate = true;
+      }
+    },
     /* Collapse every building within r of (x, z). Returns how many fell. */
     smashAt(x, z, r) {
       const hits = [];

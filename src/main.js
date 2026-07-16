@@ -14,7 +14,7 @@ import {
   DECK_Y,
   X_CLAMP,
 } from './world.js';
-import { frame, arcDelta, LOOP_LEN } from './path.js';
+import { frame, arcDelta, curvatureAt, LOOP_LEN } from './path.js';
 import { createCity } from './city.js';
 import { createFx } from './fx.js';
 import { pickThree } from './upgrades.js';
@@ -27,7 +27,7 @@ const BEST_KEY = 'gakaura-best';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const { renderer, scene, camera, camLight } = createScene(document.getElementById('game'));
+const { renderer, scene, camera, camLight, setVelocityLook } = createScene(document.getElementById('game'));
 const mats = makeMaterials();
 mats.deckFloor.map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 const { segments, pools, traffic } = createWorld(scene, mats);
@@ -75,7 +75,6 @@ contactShadow.scale.set(3.0, 2.2, 1);
 scene.add(contactShadow);
 
 /* run-cycle state */
-const STRIDE = 7;
 let runPhase = 0;
 let airPose = 0;
 let lastStep = 0;
@@ -106,8 +105,36 @@ let level = 0;
 let xpNext = 3;
 let upLevels = {};
 
+function xpForLevel(lv) {
+  return Math.ceil(3 * 1.25 ** lv);
+}
+
 const SLAM_R = [0, 12, 22, 34];
 const FLOAT_G = [7, 5.5, 4.5, 3.5];
+
+const SPEED_PHASES = [
+  { kmh: 0, label: 'CITY SPEED', toast: '' },
+  { kmh: 200, label: 'FLOW — 交通を置き去りにする', toast: '200 km/h — 交通が止まって見える' },
+  { kmh: 400, label: 'LIGHT CITY — 都市が光になる', toast: '400 km/h — 東京が光の流れに変わる' },
+  { kmh: 1000, label: 'TRANSONIC — 音速接近', toast: '1,000 km/h — 音速の壁が見えた' },
+  { kmh: 1235, label: 'SUPERSONIC — 音を追い越す', toast: 'SONIC BOOM — 音速突破' },
+  { kmh: 3000, label: 'HYPERSONIC — 空気が燃える', toast: '3,000 km/h — 極超音速領域' },
+  { kmh: 10000, label: 'LIGHT LOOP — 東京は光の環', toast: '10,000 km/h — C1が光の環になった' },
+];
+
+function speedPhase(kmh) {
+  let stage = 0;
+  for (let i = 1; i < SPEED_PHASES.length; i++) {
+    if (kmh >= SPEED_PHASES[i].kmh) stage = i;
+  }
+  return stage;
+}
+
+let sync = 1;
+let recovery = 0;
+let velocityStage = 0;
+let highestVelocityStage = 0;
+const sonicFlash = document.getElementById('sonic-flash');
 
 let best = 0;
 try {
@@ -166,6 +193,11 @@ function start() {
   grounded = true;
   slamming = false;
   speed = 15;
+  sync = 1;
+  recovery = 0;
+  velocityStage = 0;
+  highestVelocityStage = 0;
+  document.body.dataset.speedStage = '0';
   dist = 0;
   shake = 0;
   squash = 0;
@@ -188,6 +220,8 @@ function start() {
   hud.hideCards();
   hud.setXp(0, 0);
   hud.setStatus(0, 0);
+  hud.setSync(1);
+  hud.setVelocityStage(SPEED_PHASES[0].label);
 }
 
 /* ---------- growth ---------- */
@@ -202,7 +236,7 @@ function openCards() {
   if (options.length === 0) {
     xp -= xpNext;
     level++;
-    xpNext = 3 + level * 2;
+    xpNext = xpForLevel(level);
     return;
   }
   state = 'choose';
@@ -216,7 +250,7 @@ function applyUpgrade(u) {
   upLevels[u.id] = (upLevels[u.id] || 0) + 1;
   xp -= xpNext;
   level++;
-  xpNext = 3 + level * 2;
+  xpNext = xpForLevel(level);
   hud.hideCards();
   hud.setXp(Math.max(0, xp) / xpNext, level);
   hud.setStatus(0, 0);
@@ -265,6 +299,12 @@ window.__gaku = {
     upLevels[id] = lv;
     hud.setStatus(0, 0);
   },
+  setSpeedKmh(kmh) {
+    const value = Math.max(54, Number(kmh) || 54);
+    upLevels.speed = Math.max(upLevels.speed || 0, 12);
+    dist = Math.max(dist, (value - 54) / 0.0324);
+    speed = value / 3.6;
+  },
   pick(i) {
     if (state === 'choose' && window.__cardOptions[i]) applyUpgrade(window.__cardOptions[i]);
   },
@@ -280,19 +320,60 @@ function step() {
   const t = clock.elapsedTime;
 
   if (state === 'run') {
-    const maxSpd = 44 + 5 * (upLevels.speed || 0);
-    let target = Math.min(15 + dist * 0.009, maxSpd);
-    if (input.boost()) target = Math.min(target + 7, maxSpd + 4);
+    const speedLevel = upLevels.speed || 0;
+    const maxKmh = 200 * 1.42 ** speedLevel;
+    const maxSpd = maxKmh / 3.6;
+    let target = Math.min((54 + dist * 0.0324) / 3.6, maxSpd);
+    if (input.boost()) target = Math.min(target * 1.12 + 3, maxSpd * 1.04);
     if (input.brake() && grounded) target *= 0.55;
+    if (recovery > 0) {
+      recovery = Math.max(0, recovery - dt);
+      target *= 0.48 + 0.52 * (1 - recovery / 4);
+    }
     speed += (target - speed) * Math.min(dt * 1.6, 1);
     S += speed * dt;
     dist += speed * dt;
 
+    const kmh = speed * 3.6;
+    velocityStage = speedPhase(kmh);
     const grip = grounded ? 7 : 3.5;
-    pvx += (input.steer() * 10.5 - pvx) * Math.min(dt * grip, 1);
+    const steer = input.steer();
+    const curve = curvatureAt(S + Math.min(80, speed * 0.16));
+    const curveForce = velocityStage > 0
+      ? Math.sign(curve) * Math.min(13, Math.abs(curve) * speed * speed * 0.005)
+      : 0;
+    pvx += (steer * 10.5 - pvx) * Math.min(dt * grip, 1);
+    pvx += curveForce * dt;
     px += pvx * dt;
     if (px < -X_CLAMP) { px = -X_CLAMP; pvx = 0; }
     if (px > X_CLAMP) { px = X_CLAMP; pvx = 0; }
+
+    /* At extreme velocity the curve pushes the giant toward the edge.
+       Missing the line costs momentum, never the run itself. */
+    const edge = Math.abs(px) / X_CLAMP;
+    if (velocityStage === 0) {
+      sync += dt * 0.55;
+    } else {
+      const stageStress = Math.min(1, (kmh - 180) / 1800);
+      const danger = Math.max(0, (edge - 0.52) / 0.48);
+      const centered = edge < 0.34 ? 0.18 : 0.06;
+      sync += dt * (centered - danger * (0.5 + stageStress * 0.85));
+    }
+    sync = Math.max(0, Math.min(1, sync));
+    if (sync <= 0 && recovery <= 0) {
+      speed *= 0.58;
+      recovery = 4;
+      sync = 0.55;
+      px *= 0.2;
+      pvx = 0;
+      py = Math.max(py, 2.6);
+      vy = -5;
+      grounded = false;
+      slamming = false;
+      shake = reducedMotion ? 0 : 0.7;
+      audio.crash();
+      hud.showToast('GRAVITY SYNC LOST — 速度低下');
+    }
 
     /* jump / float / slam */
     if (input.consumeJump() && grounded) {
@@ -323,6 +404,17 @@ function step() {
     }
     squash = Math.max(0, squash - dt * 5);
 
+    if (state === 'run') {
+      const reach = (upLevels.magnet || 0) * 1.5;
+      const sweep = Math.min(150, speed * dt + 2);
+      const taken = collectOrbs(segments, S, px, py, reach, sweep);
+      if (taken > 0) {
+        dist += 25 * taken;
+        gainXp(taken);
+        audio.blip(700, 1180, 0.14, 0.14, 'sine');
+      }
+    }
+
     while ((firstSlot + 1) * SEG_LEN < S - 25) {
       assignSegment(segForSlot(firstSlot + SEG_COUNT), firstSlot + SEG_COUNT);
       firstSlot++;
@@ -342,20 +434,16 @@ function step() {
     });
 
     if (state === 'run') {
-      const reach = (upLevels.magnet || 0) * 1.5;
-      const taken = collectOrbs(segments, S, px, py, reach);
-      if (taken > 0) {
-        dist += 25 * taken;
-        gainXp(taken);
-        audio.blip(700, 1180, 0.14, 0.14, 'sine');
-      }
-
-      runPhase += (speed / STRIDE) * Math.PI * 2 * dt;
+      const cadence = 2.35 + Math.max(0, Math.log2(Math.max(1, speed * 3.6 / 100))) * 0.48;
+      runPhase += cadence * Math.PI * 2 * dt;
       if (grounded) {
         const stepN = Math.floor(runPhase / Math.PI);
         if (stepN !== lastStep) {
           lastStep = stepN;
           audio.blip(95, 45, 0.1, 0.13, 'sine');
+          if (velocityStage >= 2) {
+            fx.shock(player.position.x, DECK_Y - 0.2, player.position.z, 2.5 + velocityStage * 1.6);
+          }
         }
       }
 
@@ -372,8 +460,32 @@ function step() {
   } else {
     runPhase += dt * 5;
   }
+
+  const liveKmh = speed * 3.6;
+  velocityStage = speedPhase(liveKmh);
+  if (velocityStage > highestVelocityStage) {
+    highestVelocityStage = velocityStage;
+    hud.showToast(SPEED_PHASES[velocityStage].toast);
+    audio.blip(120, Math.min(1600, 260 + velocityStage * 210), 0.65, 0.24, 'sawtooth');
+    if (velocityStage === 4) {
+      audio.crash();
+      sonicFlash.classList.remove('boom');
+      void sonicFlash.offsetWidth;
+      sonicFlash.classList.add('boom');
+    }
+  }
+  document.body.dataset.speedStage = String(velocityStage);
+  document.documentElement.style.setProperty(
+    '--velocity-intensity',
+    String(reducedMotion ? 0 : Math.min(0.82, Math.max(0, (Math.log10(Math.max(1, liveKmh)) - 2.18) / 2.0)))
+  );
+  hud.setVelocityStage(SPEED_PHASES[velocityStage].label);
+  hud.setSync(sync);
+  setVelocityLook(liveKmh, velocityStage);
+  city.setVelocity(liveKmh, velocityStage);
+
   airPose += ((grounded ? 0 : 1) - airPose) * Math.min(dt * 9, 1);
-  poseGiant(giant, runPhase, airPose, Math.min(1, Math.max(0, (speed - 15) / 29)));
+  poseGiant(giant, runPhase, airPose, Math.min(1, velocityStage / 4 + Math.max(0, liveKmh - 54) / 1500));
   fx.update(dt);
   city.update(dt);
 
@@ -397,10 +509,13 @@ function step() {
     camX += Math.sin(camShakeT * 13) * shake * 0.4;
     shake = Math.max(0, shake - dt * 2);
   }
-  frame(S - 7.2, fCam);
-  frame(S + 12, fLook);
-  camera.position.set(fCam.x + fCam.nx * camX, 3.0 - py * 0.25 + bob, fCam.z + fCam.nz * camX);
-  camera.lookAt(fLook.x + fLook.nx * px * 0.8, 4.6 - py * 0.4, fLook.z + fLook.nz * px * 0.8);
+  const camBack = 7.2 + velocityStage * 8;
+  const lookAhead = 12 + velocityStage * 16;
+  frame(S - camBack, fCam);
+  frame(S + lookAhead, fLook);
+  const fastLift = velocityStage * 0.32;
+  camera.position.set(fCam.x + fCam.nx * camX, 3.0 + fastLift - py * 0.25 + bob, fCam.z + fCam.nz * camX);
+  camera.lookAt(fLook.x + fLook.nx * px * 0.8, 4.6 + fastLift * 0.35 - py * 0.4, fLook.z + fLook.nz * px * 0.8);
   camLight.position.set(fCam.x + fCam.nx * camX, 3.6, fCam.z + fCam.nz * camX);
 
   renderer.render(scene, camera);

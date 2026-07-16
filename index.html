@@ -10,10 +10,20 @@
   <canvas id="game"></canvas>
 
   <div id="hud">
-    <span id="speed">0 km/h</span>
+    <div id="velocity-readout">
+      <span id="speed">0 km/h</span>
+      <span id="speed-stage">CITY SPEED</span>
+    </div>
     <span id="dist">0 m</span>
     <span id="best">BEST 0 m</span>
   </div>
+  <div id="syncwrap">
+    <span>GRAVITY SYNC</span>
+    <div id="syncrail"><div id="syncbar"></div></div>
+    <b id="syncvalue">100%</b>
+  </div>
+  <div id="velocity-fx"></div>
+  <div id="sonic-flash"></div>
   <div id="toast" class="hidden"></div>
   <div id="status"></div>
   <div id="xpwrap"><div id="xpbar"></div><span id="lvl">Lv 1</span></div>
@@ -25,11 +35,11 @@
   <div id="overlay">
     <p id="over-en">Gravity-Flipped Shuto Giant</p>
     <h1 id="over-title">高架裏</h1>
-    <p id="over-sub">重力反転。巨人が首都高 C1 都心環状線 (実線形 12.5km) の裏面を逆さに爆走する。スペース / タップでスタート</p>
+    <p id="over-sub">200、400、1,000、そして10,000 km/hへ。速度が上がるたび、東京の見え方が変わる。スペース / タップでスタート</p>
     <div id="over-stats"></div>
     <p id="over-keys">
       <b>← →</b> 移動　<b>スペース</b> 跳躍 (長押しで滞空)　<b>空中で↓</b> スラム急降下　<b>↑</b> 加速　<b>↓</b> 減速<br />
-      障害物なしの無限走行。光の玉 = 経験値。レベルアップで強化を選べ。<br />
+      障害物なしの無限走行。カーブの外へ流されないよう重力同期を保て。光の玉 = 経験値。<br />
       衝撃波を極めれば、スラムでビルごと粉砕できる。<br />
       スマホ: 画面下半分の左右でハンドル、上半分タップでジャンプ。<br />
       <span style="opacity:0.65">コース線形: © OpenStreetMap contributors (ODbL)</span>

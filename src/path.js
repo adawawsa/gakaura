@@ -75,6 +75,14 @@ export function radiusAt(s) {
   return radii[Math.floor(wrap(s) / STEP) % N];
 }
 
+/* Signed horizontal curvature. Positive and negative values bend toward
+   opposite sides of the deck; magnitude is roughly 1 / radius. */
+export function curvatureAt(s) {
+  const a = frame(s - 10, {});
+  const b = frame(s + 10, {});
+  return (a.tx * b.tz - a.tz * b.tx) / 20;
+}
+
 /* What lies under the deck at arc s: 0 = street, 1 = water, 2 = bare ground.
    Derived from OSM surface roads and water polygons. */
 export function terrainAt(s) {

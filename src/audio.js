@@ -63,7 +63,10 @@ export function createAudio() {
   function setEngine(speed, running) {
     if (!ctx || !engine) return;
     engine.gain.gain.setTargetAtTime(running ? 0.035 : 0, ctx.currentTime, running ? 0.1 : 0.05);
-    if (running) engine.osc.frequency.setTargetAtTime(40 + speed * 2.6, ctx.currentTime, 0.08);
+    if (running) {
+      const pitch = 42 + Math.log2(1 + Math.max(0, speed)) * 31;
+      engine.osc.frequency.setTargetAtTime(pitch, ctx.currentTime, 0.08);
+    }
   }
 
   return { init, blip, crash, setEngine };

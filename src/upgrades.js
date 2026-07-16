@@ -26,8 +26,8 @@ export const UPGRADES = [
   {
     id: 'speed',
     name: '韋駄天',
-    desc: ['最高速度 +18 km/h', '最高速度 +18 km/h', '最高速度 +18 km/h'],
-    max: 3,
+    desc: Array.from({ length: 12 }, (_, i) => `最高速度 ${Math.round(200 * 1.42 ** (i + 1)).toLocaleString('ja-JP')} km/h を解放`),
+    max: 12,
   },
 ];
 

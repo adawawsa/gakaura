@@ -28,5 +28,23 @@ export function createScene(canvas) {
   window.addEventListener('resize', resize);
   resize();
 
-  return { renderer, scene, camera, camLight };
+  const baseBg = new THREE.Color(0x0a0e12);
+  const fastBg = new THREE.Color(0x030b18);
+  const plasmaBg = new THREE.Color(0x160718);
+  const lookColor = new THREE.Color();
+
+  function setVelocityLook(kmh, stage) {
+    const fast = Math.min(1, Math.max(0, (kmh - 200) / 2800));
+    const plasma = Math.min(1, Math.max(0, (kmh - 3000) / 7000));
+    lookColor.copy(baseBg).lerp(fastBg, fast).lerp(plasmaBg, plasma * 0.72);
+    scene.background.copy(lookColor);
+    scene.fog.color.copy(lookColor);
+    scene.fog.near = 40 + stage * 12;
+    scene.fog.far = Math.min(380, 300 + stage * 16);
+    const targetFov = 68 + Math.min(25, Math.log2(Math.max(1, kmh / 180)) * 5.5);
+    camera.fov += (targetFov - camera.fov) * 0.08;
+    camera.updateProjectionMatrix();
+  }
+
+  return { renderer, scene, camera, camLight, setVelocityLook };
 }

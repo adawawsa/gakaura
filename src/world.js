@@ -269,7 +269,7 @@ export function collide(segments, S, px, py) {
 
 /* Collects any orb within reach (reach grows with the magnet upgrade);
    returns how many were taken. */
-export function collectOrbs(segments, S, px, py, reach = 0) {
+export function collectOrbs(segments, S, px, py, reach = 0, sweep = 0) {
   let taken = 0;
   for (const seg of segments) {
     for (const ob of seg.userData.orbs) {
@@ -277,7 +277,7 @@ export function collectOrbs(segments, S, px, py, reach = 0) {
       const op = ob.mesh.position;
       const d = arcDelta(S, seg.userData.sCenter - op.z);
       if (
-        Math.abs(d) < 1.6 + reach &&
+        Math.abs(d) < 1.6 + reach + sweep &&
         Math.abs(op.x - px) < 1.25 + reach &&
         Math.abs(ob.drop - (py + 0.7)) < 1.0 + reach * 0.6
       ) {

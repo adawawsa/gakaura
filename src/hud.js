@@ -1,5 +1,6 @@
 export function createHud() {
   const speed = document.getElementById('speed');
+  const speedStage = document.getElementById('speed-stage');
   const dist = document.getElementById('dist');
   const best = document.getElementById('best');
   const overlay = document.getElementById('overlay');
@@ -12,6 +13,8 @@ export function createHud() {
   const lvl = document.getElementById('lvl');
   const cards = document.getElementById('cards');
   const cardsRow = document.getElementById('cards-row');
+  const syncbar = document.getElementById('syncbar');
+  const syncvalue = document.getElementById('syncvalue');
   let toastTimer = 0;
 
   return {
@@ -65,7 +68,17 @@ export function createHud() {
       cards.classList.add('hidden');
     },
     setSpeed(kmh) {
-      speed.textContent = `${Math.floor(kmh)} km/h`;
+      const value = Math.floor(kmh);
+      speed.textContent = `${value.toLocaleString('ja-JP')} km/h`;
+    },
+    setVelocityStage(label) {
+      speedStage.textContent = label;
+    },
+    setSync(frac) {
+      const pct = Math.round(Math.max(0, Math.min(1, frac)) * 100);
+      syncbar.style.width = `${pct}%`;
+      syncvalue.textContent = `${pct}%`;
+      syncbar.classList.toggle('danger', pct < 28);
     },
     setDist(m, lap = 0) {
       dist.textContent = lap > 0 ? `LAP ${lap + 1} · ${Math.floor(m)} m` : `${Math.floor(m)} m`;
