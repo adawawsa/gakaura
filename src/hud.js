@@ -7,9 +7,36 @@ export function createHud() {
   const overSub = document.getElementById('over-sub');
   const overStats = document.getElementById('over-stats');
   const toast = document.getElementById('toast');
+  const status = document.getElementById('status');
+  const xpbar = document.getElementById('xpbar');
+  const lvl = document.getElementById('lvl');
+  const cards = document.getElementById('cards');
+  const cardsRow = document.getElementById('cards-row');
   let toastTimer = 0;
 
   return {
+    setXp(frac, level) {
+      xpbar.style.width = `${Math.min(100, frac * 100)}%`;
+      lvl.textContent = `Lv ${level + 1}`;
+    },
+    setStatus(shield, charges) {
+      status.textContent = `${'🛡'.repeat(shield)}${shield && charges ? ' ' : ''}${'✊'.repeat(charges)}`;
+    },
+    showCards(options, levels, onPick) {
+      cardsRow.innerHTML = '';
+      options.forEach((u, i) => {
+        const lv = levels[u.id] || 0;
+        const btn = document.createElement('button');
+        btn.className = 'card';
+        btn.innerHTML = `<span class="cl">${i + 1} ｜ Lv ${lv} → ${lv + 1}</span><h3>${u.name}</h3><p>${u.desc[lv]}</p>`;
+        btn.addEventListener('click', () => onPick(u));
+        cardsRow.appendChild(btn);
+      });
+      cards.classList.remove('hidden');
+    },
+    hideCards() {
+      cards.classList.add('hidden');
+    },
     setSpeed(kmh) {
       speed.textContent = `${Math.floor(kmh)} km/h`;
     },

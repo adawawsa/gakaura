@@ -17,6 +17,23 @@ const BODY_COLORS = [0x2b2f38, 0x3a3f4a, 0x54585f, 0x6e3030, 0x2e4a3a, 0x8a8f96]
 
 const _f = {};
 
+/* difficulty knob: probability of a joint ridge per non-pillar slot */
+let ridgeProb = 0.28;
+export function setRidgeProbability(p) {
+  ridgeProb = p;
+}
+
+/* Remove a segment's hazard (smashed by the giant). */
+export function destroyHazard(seg) {
+  const u = seg.userData;
+  u.hasPillar = false;
+  u.hasRidge = false;
+  u.cap.visible = false;
+  u.shaft.visible = false;
+  u.ridge.visible = false;
+  for (const m of u.markers) m.visible = false;
+}
+
 export function createWorld(scene, mats) {
   const segments = [];
   const pools = [];
@@ -189,7 +206,7 @@ export function assignSegment(seg, slot, safe = false) {
   u.cap.visible = u.hasPillar;
   u.shaft.visible = u.hasPillar;
 
-  u.hasRidge = !safe && !u.hasPillar && Math.random() < 0.28;
+  u.hasRidge = !safe && !u.hasPillar && Math.random() < ridgeProb;
   u.ridgeH = 0.6 + Math.random() * 0.35;
   u.ridge.visible = u.hasRidge;
   u.ridge.scale.y = u.ridgeH;
@@ -250,7 +267,7 @@ export function placeStreetCar(t) {
 }
 
 /* py = how far the player has dropped from the deck underside.
-   Returns 'pillar' | 'ridge' | null. */
+   Returns { type, seg } for a hit hazard, or null. */
 export function collide(segments, S, px, py) {
   for (const seg of segments) {
     const u = seg.userData;
@@ -258,23 +275,28 @@ export function collide(segments, S, px, py) {
     const d = arcDelta(S, u.sCenter);
 
     if (u.hasPillar && Math.abs(d) < 2.9) {
-      if (Math.abs(px) < 4.0 && py < 1.05) return 'pillar';
-      if (Math.abs(px) < 1.9 && py + 1.15 > 1.05) return 'pillar';
+      if (Math.abs(px) < 4.0 && py < 1.05) return { type: 'pillar', seg };
+      if (Math.abs(px) < 1.9 && py + 1.15 > 1.05) return { type: 'pillar', seg };
     }
-    if (u.hasRidge && Math.abs(d) < 2.35 && py < u.ridgeH - 0.12) return 'ridge';
+    if (u.hasRidge && Math.abs(d) < 2.35 && py < u.ridgeH - 0.12) return { type: 'ridge', seg };
   }
   return null;
 }
 
-/* Collects any orb touching the player; returns how many were taken. */
-export function collectOrbs(segments, S, px, py) {
+/* Collects any orb within reach (reach grows with the magnet upgrade);
+   returns how many were taken. */
+export function collectOrbs(segments, S, px, py, reach = 0) {
   let taken = 0;
   for (const seg of segments) {
     for (const ob of seg.userData.orbs) {
       if (ob.taken) continue;
       const op = ob.mesh.position;
       const d = arcDelta(S, seg.userData.sCenter - op.z);
-      if (Math.abs(d) < 1.6 && Math.abs(op.x - px) < 1.25 && Math.abs(ob.drop - (py + 0.7)) < 1.0) {
+      if (
+        Math.abs(d) < 1.6 + reach &&
+        Math.abs(op.x - px) < 1.25 + reach &&
+        Math.abs(ob.drop - (py + 0.7)) < 1.0 + reach * 0.6
+      ) {
         ob.taken = true;
         ob.mesh.visible = false;
         taken++;
