@@ -282,11 +282,11 @@ export function makeCapTexture() {
 
 /* Mid-rise tower facades for the skyline beyond the deck edges. */
 export function makeTowerTexture() {
-  return canvasTex(128, 256, (g, w, h) => {
+  return canvasTex(256, 512, (g, w, h) => {
     g.fillStyle = '#0e1116';
     g.fillRect(0, 0, w, h);
-    const cols = 6;
-    const rows = 14;
+    const cols = 12;
+    const rows = 26;
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         if (Math.random() < 0.3) {

@@ -40,8 +40,7 @@ npm run preview  # ビルド結果の確認
 - `src/audio.js` — WebAudio (エンジン音・効果音)
 - `src/hud.js` — HUD とオーバーレイ
 
-注意: `useLegacyLights` 前提で照明を調整している。three を r165 以降へ上げる場合は光量の再調整が必要。
-
 ## 出典
 
 - コース線形: © OpenStreetMap contributors (ODbL)
+- 沿線建物 (`src/buildings.json`): 国土交通省 Project PLATEAU 3D都市モデル (東京都23区 LOD1) を加工して作成

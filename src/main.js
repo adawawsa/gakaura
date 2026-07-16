@@ -16,6 +16,7 @@ import {
   X_CLAMP,
 } from './world.js';
 import { frame, arcDelta, LOOP_LEN } from './path.js';
+import { createCity } from './city.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createHud } from './hud.js';
@@ -29,6 +30,7 @@ const mats = makeMaterials();
 /* keep the panel grid crisp at grazing angles */
 mats.deckFloor.map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 const { segments, pools, traffic } = createWorld(scene, mats);
+createCity(scene);
 const hud = createHud();
 const audio = createAudio();
 const input = createInput(() => {

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { makeBuildingTexture, makeTowerTexture } from './textures.js';
 import { makeCar } from './car.js';
 import { frame, arcDelta, radiusAt, LOOP_LEN } from './path.js';
 
@@ -24,10 +23,6 @@ export function createWorld(scene, mats) {
   const traffic = [];
 
   mats.deckFloor.map.repeat.set(2, 1);
-
-  /* texture pools so recycling segments never re-renders canvases */
-  const towerTexs = Array.from({ length: 8 }, makeTowerTexture);
-  const shopTexs = Array.from({ length: 6 }, makeBuildingTexture);
 
   const L = SEG_LEN + OVERLAP;
   const streetGeo = new THREE.PlaneGeometry(26, L);
@@ -128,19 +123,6 @@ export function createWorld(scene, mats) {
       u.viaducts.push({ slab, pier });
     }
 
-    /* city buildings */
-    u.towerTexs = towerTexs;
-    u.shopTexs = shopTexs;
-    u.buildings = [];
-    for (const s of [-1, 1]) {
-      const shop = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ map: shopTexs[0] }));
-      seg.add(shop);
-      u.buildings.push({ mesh: shop, side: s, kind: 'shop' });
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ map: towerTexs[0] }));
-      seg.add(tower);
-      u.buildings.push({ mesh: tower, side: s, kind: 'tower' });
-    }
-
     /* sodium dots on distant structures */
     u.farGlows = [];
     for (let gi = 0; gi < 2; gi++) {
@@ -218,23 +200,6 @@ export function assignSegment(seg, slot, safe = false) {
   for (const v of u.viaducts) {
     v.slab.visible = showViaducts;
     v.pier.visible = showViaducts && slot % 3 === 0;
-  }
-
-  for (const bd of u.buildings) {
-    if (bd.kind === 'shop') {
-      const hgt = 2.5 + Math.random() * 1.6;
-      bd.mesh.visible = Math.random() < 0.2;
-      bd.mesh.scale.set(8 + Math.random() * 6, hgt, 8 + Math.random() * 10);
-      bd.mesh.position.set(bd.side * (18 + Math.random() * 12), hgt / 2, 0);
-      bd.mesh.material.map = u.shopTexs[Math.floor(Math.random() * u.shopTexs.length)];
-    } else {
-      const hgt = 10 + Math.random() * 20;
-      bd.mesh.visible = Math.random() < 0.3;
-      bd.mesh.scale.set(12 + Math.random() * 12, hgt, 12 + Math.random() * 18);
-      bd.mesh.position.set(bd.side * (60 + Math.random() * 80), hgt / 2, 0);
-      bd.mesh.material.map = u.towerTexs[Math.floor(Math.random() * u.towerTexs.length)];
-    }
-    bd.mesh.material.needsUpdate = true;
   }
 
   for (const fg of u.farGlows) {
